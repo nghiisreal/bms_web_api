@@ -325,7 +325,7 @@ namespace bms_web_api.Controllers
                 return NotFound();
             }
         }
-        [HttpPut("{role}")]
+        [HttpPut("{id}")]
         public async Task<IActionResult> ChangeRole(int id, UpdateRoleModel model)
         {
             // Tìm theo email LINQ [Object] Query SingleOrDefault
