@@ -30,7 +30,7 @@ namespace bms_web_api.Data
                 entity.ToTable("Users");
                 entity.HasKey(user => user.userId);
                 entity.HasIndex(user => user.username).IsUnique(); //duy nhất
-                entity.Property(user => user.name).IsRequired().HasColumnType("varchar(50)");
+                entity.Property(user => user.name).IsRequired().HasColumnType("nvarchar(50)");
                 entity.Property(user => user.username).IsRequired().HasColumnType("varchar(20)");
                 entity.Property(user => user.user_email).IsRequired().HasColumnType("varchar(50)");
                 // Mã hóa chuỗi băm 64 ký tự
