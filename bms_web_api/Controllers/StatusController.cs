@@ -151,6 +151,46 @@ namespace bms_web_api.Controllers
                                 return BadRequest("Có lỗi xảy ra khi gửi email. Vui lòng thử lại sau.");
                             }
                         }
+                        else if (order.status == "Không nhận hàng")
+                        {
+                            existingOrder.status = order.status;
+                            existingOrder.receive_date = default(DateTime);
+                            var ordered = await _context.Orders
+                                            .Include(o => o.OrderItems)
+                                            .ThenInclude(oi => oi.Book)
+                                            .FirstOrDefaultAsync(o => o.order_id == id);
+
+                            foreach (var orderItem in ordered.OrderItems)
+                            {
+
+                                // Tìm PNK có mã lớn nhất trong database
+                                var maxIRCId = await _context.InventoryReceiptDatas.MaxAsync(o => o.irc_id);
+
+                                // Tách phần số của mã PNK (NK và 5 số ra riêng) và tăng giá trị lên 1
+                                var ircNumber = 1;
+                                if (maxIRCId != null)
+                                {
+                                    ircNumber = int.Parse(maxIRCId.Substring(2)) + 1;
+                                }
+
+                                // Ghép phần số vào với ký tự 'NK' và các số 0 ở trước để tạo mã nhập kho mới
+                                // độ dài 5 ký tự và các số 0 ở trước (nếu cần)
+                                var newIRCId = $"NK{ircNumber:D5}";
+                                orderItem.Book.book_quantity += orderItem.quantity;
+                                var inventoryReceipt = new InventoryReceiptData
+                                {
+                                    irc_id = newIRCId,
+                                    book_id = orderItem.book_id,
+                                    book_quantity = orderItem.quantity,
+                                    input_date = DateTime.Now
+                                };
+                                _context.InventoryReceiptDatas.Add(inventoryReceipt);
+
+                                await _context.SaveChangesAsync();
+                            }
+
+                            await _context.SaveChangesAsync();
+                        }
                         else
                         {
                             existingOrder.receive_date = default(DateTime);
