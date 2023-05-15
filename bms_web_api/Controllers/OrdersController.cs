@@ -291,12 +291,10 @@ namespace bms_web_api.Controllers
                         existingOrder.order_date = DateTime.Now;
                         await _context.SaveChangesAsync();
                         // Xóa các sản phẩm cũ trong đơn hàng
-                        //foreach (var orderItem in existingOrder.OrderItems)
-                        //{
-                        //    var book = await _context.Books.FindAsync(orderItem.book_id);
-                        //    book.book_quantity += orderItem.quantity;
-                        //    _context.Remove(orderItem);
-                        //}
+                        foreach (var orderItem in existingOrder.OrderItems)
+                        {
+                            _context.Remove(orderItem);
+                        }
 
                         // Thêm các sản phẩm mới vào đơn hàng
                         foreach (var orderItem in order.OrderItems)
@@ -318,9 +316,6 @@ namespace bms_web_api.Controllers
                                 book_price = book.book_price
                             };
                             existingOrder.OrderItems.Add(newOrderItem);
-
-                            // Cập nhật số lượng sách trong kho
-                            //book.book_quantity -= orderItem.Quantity;
 
                         }
 
