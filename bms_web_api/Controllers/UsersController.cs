@@ -90,8 +90,9 @@ namespace bms_web_api.Controllers
         // Xóa token xác nhận email
         private async Task RemoveExpiredTokens()
         {
+            // Không có mã xác nhận
             var expiredTokens = await _context.Users
-         .Where(t => t.isEmail_Confirmed == false && t.resetToken_time <= DateTime.Now)
+         .Where(t => t.isEmail_Confirmed == false)
          .ToListAsync();
 
             if (expiredTokens.Any())
@@ -108,7 +109,7 @@ namespace bms_web_api.Controllers
                 // Tìm user có emailConfirmation_Token trùng với mã xác nhận nhập vào
                 var user = await _context.Users.FirstOrDefaultAsync(t => t.emailConfirmation_Token == emailToken);
 
-                // Kiểm tra thời gian resetToken_time và đảm bảo rằng token chỉ có thể được xác nhận trong vòng 1 phút sau khi được tạo ra
+                // Kiểm tra thời gian resetToken_time và đảm bảo rằng token chỉ có thể được xác nhận trong vòng 15 phút sau khi được tạo ra
                 var time = await _context.Users.FirstOrDefaultAsync(t => t.resetToken_time > DateTime.Now && t.isEmail_Confirmed == false);
 
                 if (time == null)

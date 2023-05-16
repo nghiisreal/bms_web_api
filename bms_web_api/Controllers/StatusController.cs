@@ -131,7 +131,7 @@ namespace bms_web_api.Controllers
                                         $"<p><span style=\"color:blue;\">{existingOrder.payment}</span></p>\n" +
                                         $"<p><b><Chi tiết đơn hàng:</b></p>\n" +
                                          $"{orderItemsDetails}" +
-                                          $"<h2>Tổng số tiền: <span style=\"color:red;\">{existingOrder.total_price.ToString("C", new CultureInfo("vi-VN"))}</span></p>\n"
+                                          $"<h2>Tổng số tiền: <span style=\"color:red;\">{existingOrder.total_price.ToString("C", new CultureInfo("vi-VN"))}</span></h2>\n\n" + $"<p>Ngân hàng: Vietcombank</p>\n" + $"<p>STK: 0458784983927</p>\n\n" + $"<p>Mọi thắc mắc xin vui lòng liên hệ: </p>\n" + $"<p>Số điện thoại: <a href='tel:0913915763'>0913915763</a></p>\n" + $"<p>Email: <a href='mailto:tinlanhnhasach@gmail.com'>tinlanhnhasach@gmail.com</a></p>\n"
                                     };
                                     //Sử dụng một đối tượng SmtpClient để gửi email
                                     using (var client = new SmtpClient())
