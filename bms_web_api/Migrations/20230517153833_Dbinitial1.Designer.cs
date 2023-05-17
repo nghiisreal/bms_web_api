@@ -12,8 +12,8 @@ using bms_web_api.Data;
 namespace bms_web_api.Migrations
 {
     [DbContext(typeof(MyDBContext))]
-    [Migration("20230515202709_DbInitial1")]
-    partial class DbInitial1
+    [Migration("20230517153833_Dbinitial1")]
+    partial class Dbinitial1
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -315,6 +315,7 @@ namespace bms_web_api.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("login_Token")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("name")

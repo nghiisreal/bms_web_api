@@ -23,7 +23,7 @@ namespace bms_web_api.Data
         public bool isEmail_Confirmed { get; set; }
         public DateTime? verify_time { get; set; }
         public DateTime? resetToken_time { get; set; }
-        public string? login_Token { get; set; }
+        public string login_Token { get; set; }
        
     }
 }

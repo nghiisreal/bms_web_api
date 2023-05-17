@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace bms_web_api.Migrations
 {
-    public partial class DbInitial1 : Migration
+    public partial class Dbinitial1 : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -81,7 +81,7 @@ namespace bms_web_api.Migrations
                     isEmail_Confirmed = table.Column<bool>(type: "bit", nullable: false),
                     verify_time = table.Column<DateTime>(type: "datetime2", nullable: true),
                     resetToken_time = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    login_Token = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    login_Token = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
