@@ -212,7 +212,6 @@ namespace bms_web_api.Controllers
             {
                 Subject = new ClaimsIdentity(new[]
                 {
-                    new Claim("email", user.user_email),
                     new Claim("name", user.name),
                     new Claim("username", user.username),
                     new Claim("id", user.userId.ToString()),
