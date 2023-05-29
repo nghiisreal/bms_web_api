@@ -66,6 +66,37 @@ namespace bms_web_api.Controllers
                 return BadRequest();
             }
         }
+        [HttpGet("TotalInputMonthYear")]
+
+        public async Task<ActionResult<StatisticModel>> GetTotalInputMonthYear(int year)
+        {
+            // Lấy danh sách phiếu nhập kho trong năm
+            var inputInvoices = await _context.InventoryReceiptDatas
+                .Where(i => i.input_date.Year == year)
+                .ToListAsync();
+
+            if (inputInvoices != null)
+            {
+                // Tính tổng chi phí nhập kho theo tháng
+                var monthExpenses = inputInvoices
+                    .GroupBy(i => new { i.input_date.Year, i.input_date.Month })
+                    .Select(g => new MonthExpenseModel
+                    {
+                        Month = g.Key.Month,
+                        Year = g.Key.Year,
+                        Expense = g.Sum(i => i.totalPrice)
+                    })
+                    .OrderBy(g => g.Year)
+                    .ThenBy(g => g.Month)
+                    .ToList();
+
+                return Ok(monthExpenses);
+            }
+            else
+            {
+                return BadRequest();
+            }
+        }
         [HttpGet("TopCustomers")]
        
         public async Task<ActionResult<HashSet<CustomerOrderStatisticModel>>> GetTopCustomers(int month, int year, int count)

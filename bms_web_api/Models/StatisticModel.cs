@@ -17,6 +17,12 @@
         public int Year { get; set; }
         public double Revenue { get; set; }
     }
+    public class MonthExpenseModel
+    {
+        public int Month { get; set; }
+        public int Year { get; set; }
+        public double Expense { get; set; }
+    }
     public class CustomerOrderStatisticModel
     {
         public string customer_name { get; set; }
