@@ -8,7 +8,8 @@
         // Khóa ngoại
         public int book_id { get; set; }
         public BookData Book { get; set; }
-
+        public double price { get; set; }
+        public double totalPrice { get; set; }
 
     }
 }

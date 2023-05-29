@@ -7,6 +7,8 @@
         public int book_id { get; set; }
         public string book_title { get; set; }
         public int quantity { get; set; } = 1;
+        public double price { get; set; }
+        public double totalPrice { get; set; }
 
     }
 }

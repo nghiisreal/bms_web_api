@@ -63,6 +63,8 @@ namespace bms_web_api.Controllers
                     book_id = p.book_id,
                     book_title = p.Book.book_title,
                     quantity = p.book_quantity,
+                    price = p.price,
+                    totalPrice = p.totalPrice,
                     // Chuyển đổi kiểu Datetime CSDL qua kiểu string cho model
                     //input_date = p.input_date.ToString("dd-MM-yyyy")
                     input_date = p.input_date
@@ -117,6 +119,8 @@ namespace bms_web_api.Controllers
                         book_id = irc.book_id,
                         book_title = irc.Book.book_title,
                         quantity = irc.book_quantity,
+                        price = irc.price,
+                        totalPrice = irc.totalPrice,
                         //input_date = irc.input_date.ToString()
                         input_date = irc.input_date
                     }).FirstOrDefaultAsync();
@@ -175,6 +179,8 @@ namespace bms_web_api.Controllers
                     irc_id = irc.irc_id,
                     book_id = irc.book_id,
                     book_quantity = irc.quantity,
+                    price = irc.price,
+                    totalPrice = irc.totalPrice,
                     // Chuyển đổi kiểu string ở model qua kiểu Datetime trong CSDL
                     //input_date = DateTime.ParseExact(irc.input_date, "dd-MM-yyyy", CultureInfo.InvariantCulture),
                     input_date = DateTime.Now
