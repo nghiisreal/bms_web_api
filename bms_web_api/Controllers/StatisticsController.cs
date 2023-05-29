@@ -66,9 +66,9 @@ namespace bms_web_api.Controllers
                 return BadRequest();
             }
         }
-        [HttpGet("TotalInputMonthYear")]
+        [HttpGet("TotalExpenseMonthYear")]
 
-        public async Task<ActionResult<StatisticModel>> GetTotalInputMonthYear(int year)
+        public async Task<ActionResult<StatisticModel>> GetTotalExpenseMonthYear(int year)
         {
             // Lấy danh sách phiếu nhập kho trong năm
             var inputInvoices = await _context.InventoryReceiptDatas
