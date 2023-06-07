@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Globalization;
 
@@ -148,6 +149,75 @@ namespace bms_web_api.Controllers
             catch
             {
                 return NotFound();
+            }
+        }
+        [HttpGet]
+        public async Task<IActionResult> BooksToExcel()
+        {
+            var ied = _context.Books.AsQueryable();
+
+            // Lấy dữ liệu từ cơ sở dữ liệu
+            var result = await ied.Select(p => new BookModelId
+            {
+                book_id = p.Id,
+                ISBN = p.ISBN,
+                book_title = p.book_title,
+                category_name = p.Category.category_name,
+                publisher_name = p.Publisher.publisher_name,
+                author_name = p.Author.author_name,
+                num_pages = p.num_pages,
+                book_price = p.book_price,
+                book_quantity = p.book_quantity,
+                book_des = p.book_des,
+                user_book = p.user_book,
+                public_date = p.public_date.ToString("dd-MM-yyyy")
+            }).ToListAsync();
+
+            // Tạo tệp Excel
+            using (var package = new ExcelPackage())
+            {
+                // Tạo một trang tính mới
+                var worksheet = package.Workbook.Worksheets.Add("Sách");
+
+                // Đặt tiêu đề cho các cột
+                worksheet.Cells[1, 1].Value = "Mã sách";
+                worksheet.Cells[1, 2].Value = "Mã ISBN";
+                worksheet.Cells[1, 3].Value = "Tên sách";
+                worksheet.Cells[1, 4].Value = "Thể loại";
+                worksheet.Cells[1, 5].Value = "Nhà xuất bản";
+                worksheet.Cells[1, 6].Value = "Tên tác giả";
+                worksheet.Cells[1, 7].Value = "Số trang";
+                worksheet.Cells[1, 8].Value = "Giá sách bán";
+                worksheet.Cells[1, 9].Value = "Số lượng tồn";
+                worksheet.Cells[1, 10].Value = "Mô tả";
+                worksheet.Cells[1, 11].Value = "Đối tượng sử dụng";
+                worksheet.Cells[1, 12].Value = "Ngày xuất bản";
+
+                // Ghi dữ liệu vào từng ô tương ứng
+                for (int i = 0; i < result.Count; i++)
+                {
+                    worksheet.Cells[i + 2, 1].Value = result[i].book_id;
+                    worksheet.Cells[i + 2, 2].Value = result[i].ISBN;
+                    worksheet.Cells[i + 2, 3].Value = result[i].book_title;
+                    worksheet.Cells[i + 2, 4].Value = result[i].category_name;
+                    worksheet.Cells[i + 2, 5].Value = result[i].publisher_name;
+                    worksheet.Cells[i + 2, 6].Value = result[i].author_name;
+                    worksheet.Cells[i + 2, 7].Value = result[i].num_pages;
+                    worksheet.Cells[i + 2, 8].Value = result[i].book_price;
+                    worksheet.Cells[i + 2, 9].Value = result[i].book_quantity;
+                    worksheet.Cells[i + 2, 10].Value = result[i].book_des;
+                    worksheet.Cells[i + 2, 11].Value = result[i].user_book;
+                    worksheet.Cells[i + 2, 12].Value = result[i].public_date;
+                }
+                // Thiết lập tên tệp và kiểu MIME
+                var fileName = "Books.xlsx";
+                var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+                // Xuất tệp Excel như một mảng byte
+                var fileBytes = package.GetAsByteArray();
+
+                // Trả về tệp Excel dưới dạng phản hồi HTTP
+                return File(fileBytes, contentType, fileName);
             }
         }
         // Thêm mới

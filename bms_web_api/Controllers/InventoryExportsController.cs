@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 using System.Globalization;
 
 namespace bms_web_api.Controllers
@@ -140,7 +141,67 @@ namespace bms_web_api.Controllers
                 return NotFound();
             }
         }
+        [HttpGet]
+        public async Task<IActionResult> InventoryExportsToExcel()
+        {
+                var ied = _context.InventoryExportDatas.AsQueryable();
 
+                // Lấy dữ liệu từ cơ sở dữ liệu
+                var result = await ied.Select(o => new InventoryExportModel
+                {
+                    iep_id = o.iep_id,
+                    export_date = o.export_date,
+                    OrderItemExport = o.Order.OrderItems.Select(oi => new OrderItemExportModel
+                    {
+                        book_id = oi.book_id,
+                        BookTitle = oi.Book.book_title,
+                        Quantity = oi.quantity,
+                        Price = oi.book_price
+                    }).ToHashSet()
+                }).ToListAsync();
+
+                // Tạo tệp Excel
+                using (var package = new ExcelPackage())
+                {
+                    // Tạo một trang tính mới
+                    var worksheet = package.Workbook.Worksheets.Add("Lịch sử xuất kho");
+
+                    // Đặt tiêu đề cho các cột
+                    worksheet.Cells[1, 1].Value = "Mã PXK";
+                    worksheet.Cells[1, 2].Value = "Mã sách";
+                    worksheet.Cells[1, 3].Value = "Tên sách";
+                    worksheet.Cells[1, 4].Value = "Số lượng xuất";
+                    worksheet.Cells[1, 5].Value = "Đơn giá";
+                    worksheet.Cells[1, 6].Value = "Ngày xuất kho";
+
+                // Ghi dữ liệu vào từng ô tương ứng
+                int rowIndex = 2;
+                    foreach (var item in result)
+                    {
+                        worksheet.Cells[rowIndex, 1].Value = item.iep_id;
+                        worksheet.Cells[rowIndex, 6].Value = item.export_date.ToString("dd-MM-yyyy");
+
+                        foreach (var orderItem in item.OrderItemExport)
+                        {
+                            worksheet.Cells[rowIndex, 2].Value = orderItem.book_id;
+                            worksheet.Cells[rowIndex, 3].Value = orderItem.BookTitle;
+                            worksheet.Cells[rowIndex, 4].Value = orderItem.Quantity;
+                            worksheet.Cells[rowIndex, 5].Value = orderItem.Price;
+                            rowIndex++;
+                        }
+                    }
+
+                    // Thiết lập tên tệp và kiểu MIME
+                    var fileName = "InventoryExports.xlsx";
+                    var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+                    // Xuất tệp Excel như một mảng byte
+                    var fileBytes = package.GetAsByteArray();
+
+                    // Trả về tệp Excel dưới dạng phản hồi HTTP
+                    return File(fileBytes, contentType, fileName);
+                }
+            }
         //// Mã phiếu XK kho có dạng 'XK0001'
         //[HttpGet]
         //public async Task<ActionResult<string>> GetNewInventoryExportId()
@@ -161,6 +222,6 @@ namespace bms_web_api.Controllers
 
         //    return Ok(newiepId);
         //}
-        
+
     }
 }

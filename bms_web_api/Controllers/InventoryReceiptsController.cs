@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 using System.Globalization;
 using System.Net;
 
@@ -21,7 +22,7 @@ namespace bms_web_api.Controllers
         }
         // Lấy dữ liệu
         [HttpGet]
-       
+
         public async Task<ActionResult<HashSet<InventoryReceiptModel>>> GetInventoryReceiptsAll(string? search, string? sort, int page = 0)
         {
             try
@@ -102,7 +103,7 @@ namespace bms_web_api.Controllers
 
         // Lấy dữ liệu theo ID
         [HttpGet("{id}")]
-       
+
         public async Task<IActionResult> GetInventoryReceiptId(string id)
         {
             try
@@ -138,7 +139,68 @@ namespace bms_web_api.Controllers
                 return NotFound();
             }
         }
+        [HttpGet]
+        public async Task<IActionResult> InventoryReceiptsToExcel()
+        {
+            try
+            {
+                var irc = _context.InventoryReceiptDatas.AsQueryable();
 
+                // Lấy dữ liệu từ cơ sở dữ liệu
+                var result = await irc.Select(p => new InventoryReceiptModel
+                {
+                    irc_id = p.irc_id,
+                    book_id = p.book_id,
+                    book_title = p.Book.book_title,
+                    quantity = p.book_quantity,
+                    price = p.price,
+                    totalPrice = p.totalPrice,
+                    input_date = p.input_date
+                }).ToListAsync();
+
+                // Tạo tệp Excel
+                using (var package = new ExcelPackage())
+                {
+                    // Tạo một trang tính mới
+                    var worksheet = package.Workbook.Worksheets.Add("Lịch sử nhập kho");
+
+                    // Đặt tiêu đề cho các cột
+                    worksheet.Cells[1, 1].Value = "Mã PNK";
+                    worksheet.Cells[1, 2].Value = "Mã sách";
+                    worksheet.Cells[1, 3].Value = "Tên sách";
+                    worksheet.Cells[1, 4].Value = "Số lượng nhập";
+                    worksheet.Cells[1, 5].Value = "Đơn giá nhập";
+                    worksheet.Cells[1, 6].Value = "Tổng tiền nhập";
+                    worksheet.Cells[1, 7].Value = "Ngày nhập hàng";
+
+                    // Ghi dữ liệu vào từng ô tương ứng
+                    for (int i = 0; i < result.Count; i++)
+                    {
+                        worksheet.Cells[i + 2, 1].Value = result[i].irc_id;
+                        worksheet.Cells[i + 2, 2].Value = result[i].book_id;
+                        worksheet.Cells[i + 2, 3].Value = result[i].book_title;
+                        worksheet.Cells[i + 2, 4].Value = result[i].quantity;
+                        worksheet.Cells[i + 2, 5].Value = result[i].price;
+                        worksheet.Cells[i + 2, 6].Value = result[i].totalPrice;
+                        worksheet.Cells[i + 2, 7].Value = result[i].input_date.ToString("dd-MM-yyyy");
+                    }
+
+                    // Thiết lập tên tệp và kiểu MIME
+                    var fileName = "InventoryReceipts.xlsx";
+                    var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+                    // Xuất tệp Excel như một mảng byte
+                    var fileBytes = package.GetAsByteArray();
+
+                    // Trả về tệp Excel dưới dạng phản hồi HTTP
+                    return File(fileBytes, contentType, fileName);
+                }
+            }
+            catch
+            {
+                return NotFound();
+            }
+        }
         // Mã phiếu nhập kho có dạng 'NK0001'
         [HttpGet]
        

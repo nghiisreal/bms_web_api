@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 
 namespace bms_web_api.Controllers
 {
@@ -117,6 +118,54 @@ namespace bms_web_api.Controllers
             catch
             {
                 return NotFound();
+            }
+        }
+        [HttpGet]
+        public async Task<IActionResult> CustomersToExcel()
+        {
+            var ied = _context.Customers.AsQueryable();
+
+            // Lấy dữ liệu từ cơ sở dữ liệu
+            var result = await ied.Select(p => new CustomerIdModel
+            {
+                Id = p.Id,
+                customer_name = p.customer_name,
+                customer_address = p.customer_address,
+                customer_email = p.customer_email,
+                customer_phone = p.customer_phone,
+            }).ToListAsync();
+
+            // Tạo tệp Excel
+            using (var package = new ExcelPackage())
+            {
+                // Tạo một trang tính mới
+                var worksheet = package.Workbook.Worksheets.Add("Khách hàng");
+
+                // Đặt tiêu đề cho các cột
+                worksheet.Cells[1, 1].Value = "Mã khách hàng";
+                worksheet.Cells[1, 2].Value = "Tên khách hàng";
+                worksheet.Cells[1, 3].Value = "Địa chỉ";
+                worksheet.Cells[1, 4].Value = "Email";
+                worksheet.Cells[1, 5].Value = "Số điện thoại";
+
+                // Ghi dữ liệu vào từng ô tương ứng
+                for (int i = 0; i < result.Count; i++)
+                {
+                    worksheet.Cells[i + 2, 1].Value = result[i].Id;
+                    worksheet.Cells[i + 2, 2].Value = result[i].customer_name;
+                    worksheet.Cells[i + 2, 3].Value = result[i].customer_address;
+                    worksheet.Cells[i + 2, 4].Value = result[i].customer_email;
+                    worksheet.Cells[i + 2, 5].Value = result[i].customer_phone;
+                }
+                // Thiết lập tên tệp và kiểu MIME
+                var fileName = "Customers.xlsx";
+                var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+                // Xuất tệp Excel như một mảng byte
+                var fileBytes = package.GetAsByteArray();
+
+                // Trả về tệp Excel dưới dạng phản hồi HTTP
+                return File(fileBytes, contentType, fileName);
             }
         }
         // Thêm mới

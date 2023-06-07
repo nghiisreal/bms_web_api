@@ -31,6 +31,8 @@ namespace bms_web_api.Models
         public DateTime order_date { get; set; }
         public string payment { get; set; }
         public string status { get; set; }
+
+        public DateTime? receive_date { get; set; }
         //public DateTime GetOrderDate()
         //{
         //    // Chuyển đổi chuỗi ngày tháng năm sang kiểu DateTime

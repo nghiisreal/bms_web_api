@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
+using OfficeOpenXml.Style;
 using System.Globalization;
 
 namespace bms_web_api.Controllers
@@ -29,7 +31,7 @@ namespace bms_web_api.Controllers
                 #region Search
                 if (!string.IsNullOrEmpty(search))
                 {
-                    order = order.Where(o => o.order_id.ToString().Contains(search));
+                    order = order.Where(o => o.order_id.Contains(search));
                     return Ok(order);
                 }
                 #endregion
@@ -151,6 +153,95 @@ namespace bms_web_api.Controllers
                 return NotFound();
             }
         }
+        [HttpGet]
+        public async Task<IActionResult> OrdersToExcel()
+        {
+            var ied = _context.Orders.AsQueryable();
+
+            // Lấy dữ liệu từ cơ sở dữ liệu
+            var result = await ied.Select(p => new OrderIdModel
+            {
+                order_id = p.order_id,
+                customer_id = p.customer_id,
+                customer_name = p.Customer.customer_name,
+                customer_address = p.Customer.customer_address,
+                customer_email = p.Customer.customer_email,
+                customer_phone = p.Customer.customer_phone,
+                // LINQ Sum
+                total_price = p.OrderItems.Sum(oi => oi.Book.book_price * oi.quantity),
+                OrderItems = p.OrderItems.Select(oi => new OrderItemModel
+                {
+                    book_id = oi.Book.Id,
+                    BookTitle = oi.Book.book_title,
+                    Quantity = oi.quantity,
+                    Price = oi.Book.book_price
+                }).ToHashSet(),
+
+                order_date = p.order_date,
+                payment = p.payment,
+                status = p.status,
+                // fix kiểu Datetime?
+                receive_date = p.receive_date.GetValueOrDefault(),
+            }).ToListAsync();
+
+            // Tạo tệp Excel
+            using (var package = new ExcelPackage())
+            {
+                // Tạo một trang tính mới
+                var worksheet = package.Workbook.Worksheets.Add("Khách hàng");
+
+                // Đặt tiêu đề cho các cột
+                worksheet.Cells[1, 1].Value = "Mã đơn hàng";
+                worksheet.Cells[1, 2].Value = "Mã khách hàng";
+                worksheet.Cells[1, 3].Value = "Tên khách hàng";
+                worksheet.Cells[1, 4].Value = "Địa chỉ";
+                worksheet.Cells[1, 5].Value = "Email";
+                worksheet.Cells[1, 6].Value = "Số điện thoại";
+                worksheet.Cells[1, 7].Value = "Mã sách";
+                worksheet.Cells[1, 8].Value = "Tên sách";
+                worksheet.Cells[1, 9].Value = "Số lượng";
+                worksheet.Cells[1, 10].Value = "Giá tiền";
+                worksheet.Cells[1, 11].Value = "Tổng tiền";
+                worksheet.Cells[1, 12].Value = "Ngày đặt hàng";
+                worksheet.Cells[1, 13].Value = "TT Thanh toán";
+                worksheet.Cells[1, 14].Value = "TT Vận chuyển";
+                worksheet.Cells[1, 15].Value = "Ngày nhận hàng";
+                // Ghi dữ liệu vào từng ô tương ứng
+                int rowIndex = 2;
+                foreach (var item in result)
+                {
+                    worksheet.Cells[rowIndex, 1].Value = item.order_id;
+                    worksheet.Cells[rowIndex, 2].Value = item.customer_id;
+                    worksheet.Cells[rowIndex, 3].Value = item.customer_name;
+                    worksheet.Cells[rowIndex, 4].Value = item.customer_address;
+                    worksheet.Cells[rowIndex, 5].Value = item.customer_email;
+                    worksheet.Cells[rowIndex, 6].Value = item.customer_phone;
+                    worksheet.Cells[rowIndex, 11].Value = item.total_price;
+                    worksheet.Cells[rowIndex, 12].Value = item.order_date.ToString("dd-MM-yyyy");
+                    worksheet.Cells[rowIndex, 13].Value = item.payment;
+                    worksheet.Cells[rowIndex, 14].Value = item.status;
+                    worksheet.Cells[rowIndex, 15].Value = item.receive_date.ToString("dd-MM-yyyy");
+
+                    foreach (var orderItem in item.OrderItems)
+                    {
+                        worksheet.Cells[rowIndex, 7].Value = orderItem.book_id;
+                        worksheet.Cells[rowIndex, 8].Value = orderItem.BookTitle;
+                        worksheet.Cells[rowIndex, 9].Value = orderItem.Quantity;
+                        worksheet.Cells[rowIndex, 10].Value = orderItem.Price;
+                        rowIndex++;
+                    }
+                }
+                // Thiết lập tên tệp và kiểu MIME
+                var fileName = "Orders.xlsx";
+                var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+                // Xuất tệp Excel như một mảng byte
+                var fileBytes = package.GetAsByteArray();
+
+                // Trả về tệp Excel dưới dạng phản hồi HTTP
+                return File(fileBytes, contentType, fileName);
+            }
+        }
         // Mã đơn hàng có dạng 'TL00001'
         [HttpGet]
         public async Task<ActionResult<string>> GetNewOrderId()
@@ -171,6 +262,7 @@ namespace bms_web_api.Controllers
 
             return Ok(newOrderId);
         }
+
         // Thêm mới
         [HttpPost]
        
@@ -240,6 +332,7 @@ namespace bms_web_api.Controllers
                     order_date = DateTime.Now,
                     payment = order.payment,
                     status = order.status,
+                    receive_date = order.receive_date.GetValueOrDefault()
                 };
 
                 _context.Add(newOrder);
