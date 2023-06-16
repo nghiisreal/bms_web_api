@@ -322,7 +322,7 @@ namespace bms_web_api.Controllers
                 book.book_price = model.book_price;
                 book.num_pages = model.num_pages;
                 book.book_des = model.book_des;
-                book.book_image = book.book_image;
+                book.book_image = model.book_image;
                 book.user_book = model.user_book;
                 //book.input_date = DateTime.ParseExact(model.input_date, "dd-MM-yyyy", CultureInfo.InvariantCulture);
                 book.public_date = DateTime.ParseExact(model.public_date, "dd-MM-yyyy", CultureInfo.InvariantCulture);
