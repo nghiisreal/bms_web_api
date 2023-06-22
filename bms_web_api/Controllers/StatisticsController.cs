@@ -127,14 +127,16 @@ namespace bms_web_api.Controllers
         public async Task<ActionResult<HashSet<TopSellingBookModel>>> GetTopSellingBooks()
         {
             var topSellingBooks = await _context.OrderItems
-        .GroupBy(oi => oi.book_id)
+        .Join(_context.Orders, oi => oi.order_id, o => o.order_id, (oi, o) => new { OrderItem = oi, Order = o })
+        .Where(a => a.Order.status == "Đã nhận hàng")
+        .GroupBy(a => a.OrderItem.book_id)
         .Select(a => new
         {
             BookId = a.Key,
-            Quantity = a.Sum(oi => oi.quantity)
+            Quantity = a.Sum(oi => oi.OrderItem.quantity)
         })
         .OrderByDescending(a => a.Quantity)
-        .Take(5) // Lấy top 5 cuốn sách bán chạy nhất
+        .Take(5)
         .ToListAsync();
 
             var bookIds = topSellingBooks.Select(a => a.BookId).ToList();
@@ -151,7 +153,5 @@ namespace bms_web_api.Controllers
 
             return Ok(result);
         }
-
-
     }
 }
