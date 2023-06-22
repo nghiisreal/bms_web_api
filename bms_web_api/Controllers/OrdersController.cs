@@ -37,11 +37,11 @@ namespace bms_web_api.Controllers
                 #endregion
 
                 #region Sort
-                // Đang xử lý và chưa thanh toán sẽ ở đầu tiên
-                order = order.OrderBy(o => o.status != "Đang xử lý" && o.payment != "Chưa thanh toán")
-               .ThenBy(o => o.status == "Đang xử lý" ? 0 : 1)
+                // Đã duyệt đơn và chưa thanh toán sẽ ở đầu tiên
+                order = order.OrderBy(o => o.status != "Đã duyệt đơn" && o.payment != "Chưa thanh toán")
                .ThenBy(o => o.status == "Đã duyệt đơn" ? 0 : 1)
                .ThenBy(o => o.status == "Đang giao hàng" ? 0 : 1)
+                 .ThenBy(o => o.status == "Đang xử lý" ? 0 : 1)
                .ThenBy(o => o.status == "Đã nhận hàng" ? 0 : 1);
                 if (!string.IsNullOrEmpty(sort))
                 {
