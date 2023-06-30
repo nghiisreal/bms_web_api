@@ -23,9 +23,66 @@ namespace bms_web_api.Controllers
         {
             _context = context;
         }
-
-        // Cập nhật
-        [HttpPut("{id}")]
+        private async Task SendEmail(OrderData existingOrder, Action callback)
+        {
+            try
+            {
+                // Lấy các item trong đơn hàng chi tiết
+                if (existingOrder.OrderItems != null)
+                {
+                    string orderItemsDetails = "";
+                    foreach (var item in existingOrder.OrderItems)
+                    {
+                        var book = _context.Books.FirstOrDefault(b => b.Id == item.book_id);
+                        if (book != null)
+                        {
+                            orderItemsDetails += $"<h3>Tên sản phẩm: {book.book_title}, Giá: {item.book_price.ToString("C", new CultureInfo("vi-VN"))}, Số lượng: {item.quantity}</h3>\n";
+                        }
+                    }
+                    // Gửi email hóa đơn
+                    var message = new MimeMessage();
+                    // Người gửi email
+                    message.From.Add(new MailboxAddress("Nhà sách Tin Lành", "tinlanhnhasach@gmail.com"));
+                    // Người nhận email
+                    message.To.Add(new MailboxAddress(existingOrder.Customer.customer_name, existingOrder.Customer.customer_email));
+                    message.Subject = $"Hóa đơn mua hàng {existingOrder.order_id}";
+                    message.Body = new TextPart("html")
+                    {
+                        Text = $"<h1>Khách hàng {existingOrder.Customer.customer_name} đã nhận hàng và thanh toán đơn đặt hàng có mã {existingOrder.order_id}!</h1>\n" +
+                        $"<h3>Chi tiết hóa đơn:</h3>\n" +
+                        $"<p>Họ tên người mua: {existingOrder.Customer.customer_name}</p>\n" +
+                        $"<p>Số điện thoại: {existingOrder.Customer.customer_phone}</p>\n" +
+                        $"<p>Địa chỉ: {existingOrder.Customer.customer_address}</p>\n" +
+                        $"<p>Ngày đặt hàng: {existingOrder.order_date}</p>\n" +
+                        $"<p>Ngày nhận hàng: {existingOrder.receive_date}</p>\n" +
+                        $"<p><span style=\"color:blue;\">{existingOrder.payment}</span></p>\n" +
+                        $"<p><b><Chi tiết đơn hàng:</b></p>\n" +
+                        $"{orderItemsDetails}" +
+                          $"<h2>Tổng số tiền: <span style=\"color:red;\">{existingOrder.total_price.ToString("C", new CultureInfo("vi-VN"))}</span></h2>\n\n" + $"<p>Ngân hàng: Vietcombank</p>\n" + $"<p>STK: 0458784983927</p>\n\n" + $"<p>Mọi thắc mắc xin vui lòng liên hệ:</p> \n" + $"<p>Số điện thoại: <a href='tel:0913915763'>0913915763</a></p>\n" + $"<p>Email: <a href='mailto:tinlanhnhasach@gmail.com'>tinlanhnhasach@gmail.com</a></p>\n"
+                    };
+                    //Sử dụng một đối tượng SmtpClient để gửi email
+                    using (var client = new SmtpClient())
+                    {
+                        //phương thức Connect để kết nối với máy chủ email
+                        client.Connect("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
+                        client.Authenticate("tinlanhnhasach@gmail.com", "ruknwqwrhxqumzlx");
+                        client.Send(message);
+                        client.Disconnect(true);
+                    }
+                }
+                // Gọi hàm callback khi gửi email thành công
+                callback();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                // Trả về lỗi
+                // Trả về lỗi
+                throw new Exception("Có lỗi xảy ra khi gửi email. Vui lòng thử lại sau.");
+            }
+        }
+            // Cập nhật
+            [HttpPut("{id}")]
        
         public async Task<IActionResult> UpdateShipping(string id, OrderStatusModel order)
         {
@@ -52,59 +109,13 @@ namespace bms_web_api.Controllers
                             // Cập nhật thông tin dữ liệu đơn hàng
                             existingOrder.status = order.status;
                             existingOrder.receive_date = DateTime.Now;
+                            // Gửi email bằng cách gọi hàm sendEmail với hàm callback
+                            await SendEmail(existingOrder, () =>
+                            {
+                                // Hàm callback được gọi khi gửi email thành công
+                                _context.SaveChanges();
+                            });
 
-                            try
-                            {
-                                // Lấy các item trong đơn hàng chi tiết
-                                if (existingOrder.OrderItems != null)
-                                {
-                                    string orderItemsDetails = "";
-                                    foreach (var item in existingOrder.OrderItems)
-                                    {
-                                        var book = _context.Books.FirstOrDefault(b => b.Id == item.book_id);
-                                        if (book != null)
-                                        {
-                                            orderItemsDetails += $"<h3>Tên sản phẩm: {book.book_title}, Giá: {item.book_price.ToString("C", new CultureInfo("vi-VN"))}, Số lượng: {item.quantity}</h3>\n";
-                                        }
-                                    }
-                                    // Gửi email hóa đơn
-                                    var message = new MimeMessage();
-                                    // Người gửi email
-                                    message.From.Add(new MailboxAddress("Nhà sách Tin Lành", "tinlanhnhasach@gmail.com"));
-                                    // Người nhận email
-                                    message.To.Add(new MailboxAddress(existingOrder.Customer.customer_name, existingOrder.Customer.customer_email));
-                                    message.Subject = $"Hóa đơn mua hàng {existingOrder.order_id}";
-                                    message.Body = new TextPart("html")
-                                    {
-                                        Text = $"<h1>Khách hàng {existingOrder.Customer.customer_name} đã nhận hàng và thanh toán đơn đặt hàng có mã {existingOrder.order_id}!</h1>\n" +
-                                        $"<h3>Chi tiết hóa đơn:</h3>\n" +
-                                        $"<p>Họ tên người mua: {existingOrder.Customer.customer_name}</p>\n" +
-                                        $"<p>Số điện thoại: {existingOrder.Customer.customer_phone}</p>\n" +
-                                        $"<p>Địa chỉ: {existingOrder.Customer.customer_address}</p>\n" +
-                                        $"<p>Ngày đặt hàng: {existingOrder.order_date}</p>\n" +
-                                        $"<p>Ngày nhận hàng: {existingOrder.receive_date}</p>\n" +
-                                        $"<p><span style=\"color:blue;\">{existingOrder.payment}</span></p>\n" +
-                                        $"<p><b><Chi tiết đơn hàng:</b></p>\n" +
-                                        $"{orderItemsDetails}" +
-                                          $"<h2>Tổng số tiền: <span style=\"color:red;\">{existingOrder.total_price.ToString("C", new CultureInfo("vi-VN"))}</span></h2>\n\n" + $"<p>Ngân hàng: Vietcombank</p>\n" + $"<p>STK: 0458784983927</p>\n\n" + $"<p>Mọi thắc mắc xin vui lòng liên hệ:</p> \n" + $"<p>Số điện thoại: <a href='tel:0913915763'>0913915763</a></p>\n" + $"<p>Email: <a href='mailto:tinlanhnhasach@gmail.com'>tinlanhnhasach@gmail.com</a></p>\n"
-                                    };
-                                    //Sử dụng một đối tượng SmtpClient để gửi email
-                                    using (var client = new SmtpClient())
-                                    {
-                                        //phương thức Connect để kết nối với máy chủ email
-                                        client.Connect("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
-                                        client.Authenticate("tinlanhnhasach@gmail.com", "ruknwqwrhxqumzlx");
-                                        client.Send(message);
-                                        client.Disconnect(true);
-                                    }
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine(ex.ToString());
-                                // Trả về lỗi
-                                return BadRequest("Có lỗi xảy ra khi gửi email. Vui lòng thử lại sau.");
-                            }
                         }
                         else if (order.status == "Đang giao hàng")
                         {
